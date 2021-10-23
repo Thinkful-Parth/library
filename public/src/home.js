@@ -9,7 +9,7 @@ function getTotalAccountsCount(accounts) {
 function getBooksBorrowedCount(books) {
   //intialize Counter
   let count = 0;
-//for each book
+  //for each book
   books.map((book) => {
     //for each borrow
     book.borrows.map((borrow) => {
@@ -25,12 +25,12 @@ function getMostCommonGenres(books) {
   let genreObj = {};
   //for each book
   books.forEach((book) =>
-  //if genre not yet in object
+    //if genre not yet in object
     !genreObj[book.genre]
-    //initialize with 1
-      ? (genreObj[book.genre] = 1)
-      // or just add 1 to its counter if it does exist
-      : (genreObj[book.genre] += 1)
+      ? //initialize with 1
+        (genreObj[book.genre] = 1)
+      : // or just add 1 to its counter if it does exist
+        (genreObj[book.genre] += 1)
   );
   let sorted = Object.entries(genreObj).sort((a, b) => b[1] - a[1]); //get values of how many times genres appear in books and sort  to get the most common
 
@@ -40,36 +40,48 @@ function getMostCommonGenres(books) {
 }
 
 function getMostPopularBooks(books) {
-  let popular = [];
-  books.map((book) =>
-    popular.push({ name: book.title, count: book.borrows.length })
+  //initialize array
+  
+  let popular = books.reduce((acc,book) =>  {
+    acc.push({ name: book.title, count: book.borrows.length });
+    //push every book with and how many borrows it has
+    return acc;
+  },[]
   );
-
+  //sort and only return the top 5 most common
   return popular.sort((a, b) => (a.count < b.count ? 1 : -1)).slice(0, 5);
 }
 
 function getMostPopularAuthors(books, authors) {
-  let popularAuthor = {};
+  //helper function
   const fullName = (author) => {
     return author.name.first + " " + author.name.last;
   };
-  const addCount = (author, book) => {
-    if (!popularAuthor[fullName(author)]) {
-      popularAuthor[fullName(author)] = book.borrows.length || 0;
-    } else {
-      popularAuthor[fullName(author)] += book.borrows.length || 0;
-    }
-  };
-  books.map((book) =>
-    authors.map((author) => {
-      author.id == book.authorId && addCount(author, book);
-    })
-  );
-  let favorites = Object.entries(popularAuthor)
-    .sort((a, b) => (a[1] < b[1] ? 1 : -1))
-    .slice(0, 5)
-    .map((author) => ({ name: author[0], count: author[1] }));
-  return favorites;
+
+  //get back an Object of authors with the amount of time someone borrowed their book
+  let popularAuthor = authors.reduce((acc, author) => {
+    //map through book to get borrow length
+    books.map((book) => {
+      //if book matches author
+      if (author.id == book.authorId) {        
+        // if accumulator from reduce does not have this object key yet
+        if (!acc[fullName(author)]) {
+          //initialize key with current borrow length
+          acc[fullName(author)] = book.borrows.length;
+        } else {
+          //add borrow length to existing key
+          acc[fullName(author)] += book.borrows.length;
+        }
+      }
+    });
+    //return reducer accumulator outside of book map arrow function
+    return acc;
+  }, []);
+
+  return Object.entries(popularAuthor) //go through reducer output
+    .sort((a, b) => (a[1] < b[1] ? 1 : -1)) //sort to get most borrowed
+    .slice(0, 5) // only want the first 5
+    .map((author) => ({ name: author[0], count: author[1] })); // formatting for webpage
 }
 
 module.exports = {
